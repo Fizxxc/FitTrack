@@ -1,0 +1,1008 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth" >
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>FitTrack | Fit & Fun</title>
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- GSAP for animations -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js" defer></script>
+  <!-- Leaflet CSS -->
+  <link
+    rel="stylesheet"
+    href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+    integrity="sha256-u7/V7Pwk+7o+GKkN6Yy4lWgJx3HbRz2+G+B7DwR+3os="
+    crossorigin=""
+  />
+  <!-- Leaflet JS -->
+  <script
+    src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+    integrity="sha256-oYlEpGiB8+rNf0sKbpk+M2NS6G1BTb9HYag9mtzPQN0="
+    crossorigin=""
+    defer
+  ></script>
+
+  <style>
+    body,html {
+      background: #1a202c; /* Tailwind gray-900 */
+      color: #e2e8f0; /* Tailwind gray-300 */
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      height: 100%;
+      margin:0;
+    }
+    ::-webkit-scrollbar {
+      width: 8px;
+    }
+    ::-webkit-scrollbar-track {
+      background: transparent;
+    }
+    ::-webkit-scrollbar-thumb {
+      background-color: #f97316; /* Tailwind orange-500 */
+      border-radius: 24px;
+    }
+    .nav-active {
+      box-shadow: 0 0 10px 2px #f97316;
+      color: #f97316 !important;
+    }
+    .map-container {
+      height: 400px;
+      border-radius: 0.75rem;
+      box-shadow: 0 10px 30px rgba(249,115,22,0.7);
+      margin-top: 1rem;
+    }
+    .button-orange {
+      background-color: #f97316;
+      transition: background-color 0.3s ease;
+    }
+    .button-orange:hover {
+      background-color: #ea580c;
+    }
+    /* Overlay background for modal */
+    .modal-overlay {
+      background: rgba(0,0,0,0.7);
+      backdrop-filter: blur(4px);
+      position: fixed;
+      inset: 0;
+      z-index: 999;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+    /* Hide elements */
+    .hidden {
+      display: none;
+    }
+    /* Input focus styles */
+    input:focus {
+      outline: none;
+      border-color: #fb923c;
+      box-shadow: 0 0 8px #fb923c;
+    }
+  </style>
+</head>
+<body class="flex flex-col min-h-screen">
+  <!-- Header -->
+  <header class="bg-gray-800 border-b border-gray-700 sticky top-0 z-50">
+    <nav class="container mx-auto flex items-center justify-between p-4">
+      <a href="#" class="text-orange-500 text-3xl font-extrabold tracking-wide select-none drop-shadow-lg animate-pulse"
+        >FitTrack | Fit & Fun</a
+      >
+      <ul id="navLinks" class="flex space-x-6 text-gray-300 font-semibold uppercase text-sm">
+        <!-- Nav links added dynamically -->
+      </ul>
+      <div id="navAuthButtons" class="flex items-center space-x-4">
+        <!-- Auth buttons added dynamically -->
+      </div>
+    </nav>
+  </header>
+
+  <!-- Main content container -->
+  <main id="mainContainer" class="flex-grow container mx-auto p-6 space-y-16">
+    <!-- Views switch here by JS -->
+  </main>
+
+  <!-- Footer -->
+  <footer class="bg-gray-900 text-gray-500 text-center p-6 border-t border-gray-700 select-none">
+    &copy; 2024 FitTrack - Made with &#9829; and Tailwind CSS
+  </footer>
+
+  <!-- MODALS -->
+  <!-- Registration Modal -->
+  <div
+    id="registerModal"
+    class="modal-overlay hidden"
+    aria-hidden="true"
+    aria-labelledby="registerTitle"
+    role="dialog"
+  >
+    <div class="bg-gray-800 rounded-xl p-8 w-full max-w-md shadow-lg shadow-orange-700/70 relative">
+      <h2 id="registerTitle" class="text-3xl font-extrabold text-orange-400 mb-6 text-center">Create an Account</h2>
+      <form id="registerForm" class="space-y-5" novalidate>
+        <div>
+          <label for="regUsername" class="block text-gray-300 mb-1 font-semibold">Username</label>
+          <input
+            type="text"
+            id="regUsername"
+            class="w-full px-4 py-2 rounded-lg bg-gray-700 text-gray-200 border border-gray-600"
+            required
+            autocomplete="username"
+            minlength="3"
+            pattern="^[a-zA-Z0-9_-]+$"
+            title="Only letters, numbers, underscores and dashes are allowed"
+          />
+          <p class="text-xs text-red-500 mt-1 hidden" id="regUsernameError"></p>
+        </div>
+        <div>
+          <label for="regPassword" class="block text-gray-300 mb-1 font-semibold">Password</label>
+          <input
+            type="password"
+            id="regPassword"
+            class="w-full px-4 py-2 rounded-lg bg-gray-700 text-gray-200 border border-gray-600"
+            required
+            minlength="6"
+            autocomplete="new-password"
+          />
+          <p class="text-xs text-red-500 mt-1 hidden" id="regPasswordError"></p>
+        </div>
+        <div>
+          <label for="regConfirmPassword" class="block text-gray-300 mb-1 font-semibold">Confirm Password</label>
+          <input
+            type="password"
+            id="regConfirmPassword"
+            class="w-full px-4 py-2 rounded-lg bg-gray-700 text-gray-200 border border-gray-600"
+            required
+            minlength="6"
+            autocomplete="new-password"
+          />
+          <p class="text-xs text-red-500 mt-1 hidden" id="regConfirmPasswordError"></p>
+        </div>
+        <button
+          type="submit"
+          class="button-orange w-full py-3 rounded-lg text-white font-semibold shadow-md shadow-orange-600/70 hover:bg-orange-600 transition duration-300"
+        >
+          Register
+        </button>
+      </form>
+      <button
+        id="closeRegisterModal"
+        class="absolute top-3 right-3 text-gray-400 hover:text-orange-500 text-2xl font-bold"
+        aria-label="Close registration form"
+      >
+        &times;
+      </button>
+      <p class="text-center mt-4 text-gray-400 text-sm">
+        Already have an account?
+        <button id="switchToLoginBtn" class="text-orange-500 font-semibold underline hover:text-orange-600">
+          Login
+        </button>
+      </p>
+    </div>
+  </div>
+
+  <!-- Login Modal -->
+  <div
+    id="loginModal"
+    class="modal-overlay hidden"
+    aria-hidden="true"
+    aria-labelledby="loginTitle"
+    role="dialog"
+  >
+    <div class="bg-gray-800 rounded-xl p-8 w-full max-w-md shadow-lg shadow-orange-700/70 relative">
+      <h2 id="loginTitle" class="text-3xl font-extrabold text-orange-400 mb-6 text-center">Login to FitTrack</h2>
+      <form id="loginForm" class="space-y-5" novalidate>
+        <div>
+          <label for="loginUsername" class="block text-gray-300 mb-1 font-semibold">Username</label>
+          <input
+            type="text"
+            id="loginUsername"
+            class="w-full px-4 py-2 rounded-lg bg-gray-700 text-gray-200 border border-gray-600"
+            required
+            autocomplete="username"
+            minlength="3"
+          />
+          <p class="text-xs text-red-500 mt-1 hidden" id="loginUsernameError"></p>
+        </div>
+        <div>
+          <label for="loginPassword" class="block text-gray-300 mb-1 font-semibold">Password</label>
+          <input
+            type="password"
+            id="loginPassword"
+            class="w-full px-4 py-2 rounded-lg bg-gray-700 text-gray-200 border border-gray-600"
+            required
+            minlength="6"
+            autocomplete="current-password"
+          />
+          <p class="text-xs text-red-500 mt-1 hidden" id="loginPasswordError"></p>
+        </div>
+        <button
+          type="submit"
+          class="button-orange w-full py-3 rounded-lg text-white font-semibold shadow-md shadow-orange-600/70 hover:bg-orange-600 transition duration-300"
+        >
+          Login
+        </button>
+      </form>
+      <button
+        id="closeLoginModal"
+        class="absolute top-3 right-3 text-gray-400 hover:text-orange-500 text-2xl font-bold"
+        aria-label="Close login form"
+      >
+        &times;
+      </button>
+      <p class="text-center mt-4 text-gray-400 text-sm">
+        Don't have an account?
+        <button id="switchToRegisterBtn" class="text-orange-500 font-semibold underline hover:text-orange-600">
+          Register
+        </button>
+      </p>
+    </div>
+  </div>
+
+  <!-- JavaScript -->
+  <script>
+    // Utility: hash password (simple, not secure SHA-256 polyfill via subtle crypto)
+    async function hashPassword(password) {
+      const msgUint8 = new TextEncoder().encode(password); // encode as (utf-8) Uint8Array
+      const hashBuffer = await crypto.subtle.digest('SHA-256', msgUint8); // hash
+      const hashArray = Array.from(new Uint8Array(hashBuffer)); // convert buffer to byte array
+      return hashArray.map((b) => b.toString(16).padStart(2, '0')).join('');
+    }
+
+    // Storage keys
+    const USERS_KEY = 'fittrack_users';
+    const SESSION_KEY = 'fittrack_session';
+
+    // Load users from localStorage
+    function loadUsers() {
+      const usersJson = localStorage.getItem(USERS_KEY);
+      if (!usersJson) return {};
+      try {
+        return JSON.parse(usersJson);
+      } catch {
+        return {};
+      }
+    }
+
+    // Save users to localStorage
+    function saveUsers(users) {
+      localStorage.setItem(USERS_KEY, JSON.stringify(users));
+    }
+
+    // Save current session username
+    function saveSession(username) {
+      localStorage.setItem(SESSION_KEY, username);
+    }
+    function clearSession() {
+      localStorage.removeItem(SESSION_KEY);
+    }
+    function getSession() {
+      return localStorage.getItem(SESSION_KEY);
+    }
+
+    // UI elements
+    const navLinks = document.getElementById('navLinks');
+    const navAuthButtons = document.getElementById('navAuthButtons');
+    const mainContainer = document.getElementById('mainContainer');
+
+    // Modals
+    const registerModal = document.getElementById('registerModal');
+    const loginModal = document.getElementById('loginModal');
+
+    // Show/hide modals utility
+    function showModal(modal) {
+      modal.classList.remove('hidden');
+      modal.setAttribute('aria-hidden', 'false');
+      // trap focus in modal (basic)
+      modal.querySelector('input, button').focus();
+    }
+    function hideModal(modal) {
+      modal.classList.add('hidden');
+      modal.setAttribute('aria-hidden', 'true');
+    }
+
+    // Navigation construction based on login state
+    function buildNavForUser(username) {
+      navLinks.innerHTML = '';
+      navAuthButtons.innerHTML = '';
+
+      if (username) {
+        // Logged-in nav links
+        const links = [
+          { text: 'Dashboard', href: '#dashboard' },
+          { text: 'Live Workout', href: '#live' },
+          { text: 'Map', href: '#map-section' },
+          { text: 'Profile', href: '#profile' },
+        ];
+        links.forEach(({ text, href }) => {
+          const li = document.createElement('li');
+          const a = document.createElement('a');
+          a.href = href;
+          a.className = 'hover:text-orange-500 nav-link';
+          a.textContent = text;
+          li.appendChild(a);
+          navLinks.appendChild(li);
+        });
+        // Highlight first nav link by default
+        highlightNavLink();
+
+        // Logout button
+        const logoutBtn = document.createElement('button');
+        logoutBtn.textContent = 'Logout';
+        logoutBtn.className =
+          'button-orange px-4 py-2 rounded-lg text-white font-medium shadow-md shadow-orange-600/50 select-none';
+        logoutBtn.addEventListener('click', () => {
+          logout();
+        });
+        navAuthButtons.appendChild(logoutBtn);
+      } else {
+        // Not logged nav links: empty or minimal
+        navLinks.innerHTML = '';
+
+        // Buttons to open login/register modals
+        const loginBtn = document.createElement('button');
+        loginBtn.textContent = 'Login';
+        loginBtn.className =
+          'button-orange px-4 py-2 rounded-lg text-white font-medium shadow-md shadow-orange-600/50 select-none';
+        loginBtn.addEventListener('click', () => showModal(loginModal));
+        navAuthButtons.appendChild(loginBtn);
+      }
+      animateNavHighlight();
+    }
+
+    // Highlight nav link active state & smooth scroll
+    function animateNavHighlight() {
+      const navLinkEls = document.querySelectorAll('.nav-link');
+      navLinkEls.forEach((link) => {
+        link.addEventListener('click', (e) => {
+          e.preventDefault();
+          navLinkEls.forEach((l) => l.classList.remove('nav-active'));
+          link.classList.add('nav-active');
+          const targetId = link.getAttribute('href').substring(1);
+          // Show section if needed
+          showAppSection(targetId);
+          document.getElementById(targetId)?.scrollIntoView({ behavior: 'smooth' });
+        });
+      });
+    }
+
+    // Highlight first nav link (default)
+    function highlightNavLink() {
+      const navLinkEls = document.querySelectorAll('.nav-link');
+      // Remove all active
+      navLinkEls.forEach((l) => l.classList.remove('nav-active'));
+      if (navLinkEls[0]) navLinkEls[0].classList.add('nav-active');
+    }
+
+    // Application views content in main container for each section
+    // Only visible sections are rendered (to keep code simple, all sections static for now)
+    // Show one main section, hide others
+    function showAppSection(sectionId) {
+      if (!sectionId) return;
+      const allSections = [
+        'dashboard',
+        'live',
+        'map-section',
+        'profile',
+      ];
+      allSections.forEach((sec) => {
+        const el = document.getElementById(sec);
+        if (el) el.style.display = sec === sectionId ? 'block' : 'none';
+      });
+    }
+
+    // Render app main content (all areas) only once after user login
+    function renderAppMainContent(username) {
+      mainContainer.innerHTML = `
+      <!-- Dashboard Section -->
+      <section id="dashboard" class="space-y-8 scroll-mt-24">
+        <h2 class="text-4xl font-extrabold text-orange-400 tracking-wide drop-shadow-lg">Your Dashboard</h2>
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+          <div
+            class="bg-gray-800 rounded-xl p-6 shadow-lg shadow-orange-700/30 transform transition-transform hover:scale-105 cursor-default"
+          >
+            <h3 class="text-gray-400 uppercase mb-4 tracking-wide font-semibold">Total Distance</h3>
+            <p class="text-5xl font-bold text-orange-500">
+              <span id="dashTotalDistance">0.00</span> km
+            </p>
+          </div>
+          <div
+            class="bg-gray-800 rounded-xl p-6 shadow-lg shadow-orange-700/30 transform transition-transform hover:scale-105 cursor-default"
+          >
+            <h3 class="text-gray-400 uppercase mb-4 tracking-wide font-semibold">Total Duration</h3>
+            <p class="text-5xl font-bold text-orange-500" id="dashTotalDuration">00:00</p>
+          </div>
+          <div
+            class="bg-gray-800 rounded-xl p-6 shadow-lg shadow-orange-700/30 transform transition-transform hover:scale-105 cursor-default"
+          >
+            <h3 class="text-gray-400 uppercase mb-4 tracking-wide font-semibold">Workouts Completed</h3>
+            <p class="text-5xl font-bold text-orange-500" id="dashWorkoutsCount">0</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- Live Workout Section -->
+      <section id="live" class="scroll-mt-24 hidden">
+        <h2 class="text-4xl font-extrabold text-orange-400 tracking-wide drop-shadow-lg mb-6">Live Workout Tracker</h2>
+        <div class="bg-gray-800 rounded-xl p-8 shadow-lg shadow-orange-700/40 max-w-3xl mx-auto">
+          <div class="space-y-8">
+            <div class="flex justify-center space-x-8">
+              <button
+                id="startBtn"
+                class="button-orange px-6 py-3 rounded-lg text-white font-semibold shadow-md shadow-orange-600/70 hover:bg-orange-600 transition duration-300"
+              >
+                Start Workout
+              </button>
+              <button
+                id="stopBtn"
+                class="bg-gray-700 px-6 py-3 rounded-lg text-gray-400 font-semibold cursor-not-allowed"
+                disabled
+              >
+                Stop Workout
+              </button>
+            </div>
+            <div class="grid grid-cols-3 gap-6 text-center">
+              <div>
+                <h3 class="text-gray-400 uppercase text-xs mb-1 tracking-widest font-semibold">Distance</h3>
+                <p class="text-4xl font-extrabold text-orange-500" id="distance">0.00 km</p>
+              </div>
+              <div>
+                <h3 class="text-gray-400 uppercase text-xs mb-1 tracking-widest font-semibold">Duration</h3>
+                <p class="text-4xl font-extrabold text-orange-500" id="duration">00:00</p>
+              </div>
+              <div>
+                <h3 class="text-gray-400 uppercase text-xs mb-1 tracking-widest font-semibold">Pace</h3>
+                <p class="text-4xl font-extrabold text-orange-500" id="pace">0:00 /km</p>
+              </div>
+            </div>
+            <p class="text-center text-gray-400 text-sm italic" id="statusMessage">Press "Start Workout" to begin tracking.</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- Map Section -->
+      <section id="map-section" class="scroll-mt-24 max-w-6xl mx-auto hidden">
+        <h2 class="text-4xl font-extrabold text-orange-400 tracking-wide drop-shadow-lg mb-6">Activity Map</h2>
+        <div id="map" class="map-container"></div>
+      </section>
+
+      <!-- Profile Section -->
+      <section
+        id="profile"
+        class="scroll-mt-24 max-w-4xl mx-auto space-y-6 bg-gray-800 rounded-xl p-8 shadow-lg shadow-orange-700/40 hidden"
+      >
+        <h2 class="text-4xl font-extrabold text-orange-400 tracking-wide drop-shadow-lg mb-6 text-center">Your Profile</h2>
+        <div class="flex flex-col md:flex-row items-center space-y-6 md:space-y-0 md:space-x-12">
+          <img
+            src="https://images.unsplash.com/photo-1607746882042-944635dfe10e?auto=format&amp;fit=crop&amp;w=256&amp;q=80"
+            alt="User Profile"
+            class="rounded-full w-40 h-40 shadow-lg shadow-orange-600/50 border-4 border-orange-500 select-none"
+          />
+          <div class="flex-grow">
+            <h3 class="text-3xl font-semibold mb-2" id="profileUsername"></h3>
+            <p class="text-gray-400 mb-6 max-w-xl">
+              Passionate runner, cyclist, and outdoor adventurer. Striving to beat personal bests and explore new trails.
+            </p>
+            <div class="grid grid-cols-2 gap-6">
+              <div>
+                <span class="block text-gray-400 uppercase text-xs font-bold mb-1">Followers</span>
+                <span class="text-orange-400 font-bold text-lg">1,245</span>
+              </div>
+              <div>
+                <span class="block text-gray-400 uppercase text-xs font-bold mb-1">Following</span>
+                <span class="text-orange-400 font-bold text-lg">457</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>    
+      `;
+
+      // Show dashboard section by default
+      showAppSection('dashboard');
+      attachWorkoutListeners(username);
+
+      // Fill profile username
+      document.getElementById('profileUsername').textContent = username;
+
+      // Load user workout data and update dashboard stats
+      updateDashboardStats(username);
+    }
+
+    // Basic validation for username pattern (letters, numbers, _ and -)
+    function isValidUsername(username) {
+      return /^[a-zA-Z0-9_-]{3,}$/.test(username);
+    }
+
+    // Validate Registration Form inputs and show inline errors
+    function validateRegistrationForm(username, password, confirmPassword) {
+      let valid = true;
+
+      // Username validation
+      if (!isValidUsername(username)) {
+        showError('regUsernameError', 'Username must be 3+ chars, letters, digits, _ or - only');
+        valid = false;
+      } else {
+        hideError('regUsernameError');
+      }
+
+      // Password validation
+      if (!password || password.length < 6) {
+        showError('regPasswordError', 'Password must be at least 6 characters');
+        valid = false;
+      } else {
+        hideError('regPasswordError');
+      }
+
+      // Confirm password match
+      if (confirmPassword !== password) {
+        showError('regConfirmPasswordError', 'Passwords do not match');
+        valid = false;
+      } else {
+        hideError('regConfirmPasswordError');
+      }
+
+      return valid;
+    }
+
+    // Show/hide error message helper
+    function showError(id, msg) {
+      const el = document.getElementById(id);
+      if (el) {
+        el.textContent = msg;
+        el.classList.remove('hidden');
+      }
+    }
+    function hideError(id) {
+      const el = document.getElementById(id);
+      if (el) el.classList.add('hidden');
+    }
+
+    // Registration Logic
+    async function handleRegister(event) {
+      event.preventDefault();
+      const username = document.getElementById('regUsername').value.trim();
+      const password = document.getElementById('regPassword').value;
+      const confirmPassword = document.getElementById('regConfirmPassword').value;
+      const users = loadUsers();
+
+      if (!validateRegistrationForm(username, password, confirmPassword)) return;
+
+      if (users[username]) {
+        showError('regUsernameError', 'Username already exists');
+        return;
+      }
+
+      // Hash password
+      const hashedPassword = await hashPassword(password);
+
+      users[username] = {
+        password: hashedPassword,
+        workouts: [], // array to save workout sessions
+      };
+      saveUsers(users);
+      alert('Registration successful! You can now login.');
+      hideModal(registerModal);
+      showModal(loginModal);
+      document.getElementById('registerForm').reset();
+    }
+
+    // Login Logic
+    async function handleLogin(event) {
+      event.preventDefault();
+      const username = document.getElementById('loginUsername').value.trim();
+      const password = document.getElementById('loginPassword').value;
+      const users = loadUsers();
+
+      // Validation
+      if (!username) {
+        showError('loginUsernameError', 'Please enter username');
+        return;
+      } else {
+        hideError('loginUsernameError');
+      }
+      if (!password) {
+        showError('loginPasswordError', 'Please enter password');
+        return;
+      } else {
+        hideError('loginPasswordError');
+      }
+
+      if (!users[username]) {
+        showError('loginUsernameError', 'User not found');
+        return;
+      }
+
+      const hashedPassword = await hashPassword(password);
+      if (users[username].password !== hashedPassword) {
+        showError('loginPasswordError', 'Incorrect password');
+        return;
+      }
+
+      // Successful login
+      hideModal(loginModal);
+      clearLoginFormErrors();
+      saveSession(username);
+      setupAppForUser(username);
+    }
+
+    // Clear login form errors
+    function clearLoginFormErrors() {
+      hideError('loginUsernameError');
+      hideError('loginPasswordError');
+    }
+
+    // Logout logic
+    function logout() {
+      clearSession();
+      clearLiveTracking();
+      setupAppForUser(null);
+    }
+
+    // Setup homepage login/register or app interface based on session
+    function setupAppForUser(username) {
+      if (username) {
+        buildNavForUser(username);
+        renderAppMainContent(username);
+      } else {
+        buildNavForUser(null);
+        mainContainer.innerHTML = `
+          <div class="flex flex-col items-center justify-center h-[calc(100vh-130px)] px-4 text-center max-w-2xl mx-auto">
+            <h1 class="text-6xl font-extrabold text-orange-400 mb-6 select-none drop-shadow-lg">Welcome to <span class="text-white">FitTrack</span></h1>
+            <p class="text-gray-300 mb-12 text-lg">
+              Please login or register to access your real-time fitness tracker with map and live stats.
+            </p>
+            <div>
+              <button
+                id="welcomeLoginBtn"
+                class="button-orange px-8 py-4 rounded-lg text-white font-semibold shadow-md shadow-orange-600/70 hover:bg-orange-600 transition duration-300 mx-3"
+              >
+                Login
+              </button>
+              <button
+                id="welcomeRegisterBtn"
+                class="bg-gray-700 px-8 py-4 rounded-lg text-gray-300 font-semibold shadow-md shadow-gray-900/50 hover:bg-gray-600 transition duration-300 mx-3"
+              >
+                Register
+              </button>
+            </div>
+          </div>
+        `;
+
+        document.getElementById('welcomeLoginBtn').addEventListener('click', () => {
+          showModal(loginModal);
+        });
+        document.getElementById('welcomeRegisterBtn').addEventListener('click', () => {
+          showModal(registerModal);
+        });
+      }
+    }
+
+    // Validate forms on input to clear errors realtime
+    function attachValidationListeners() {
+      const regUsernameIn = document.getElementById('regUsername');
+      const regPasswordIn = document.getElementById('regPassword');
+      const regConfirmPasswordIn = document.getElementById('regConfirmPassword');
+
+      regUsernameIn.addEventListener('input', () => hideError('regUsernameError'));
+      regPasswordIn.addEventListener('input', () => hideError('regPasswordError'));
+      regConfirmPasswordIn.addEventListener('input', () => hideError('regConfirmPasswordError'));
+
+      document.getElementById('loginUsername').addEventListener('input', () => hideError('loginUsernameError'));
+      document.getElementById('loginPassword').addEventListener('input', () => hideError('loginPasswordError'));
+    }
+
+    // Workout tracking
+
+    // Variables for workout tracking
+    let watchID = null;
+    let positions = [];
+    let startTime = null;
+    let timerInterval = null;
+    let map = null;
+    let polyline = null;
+    let activeUsername = null; // who is logged in and working out
+
+    // Utility: format duration seconds as mm:ss or hh:mm:ss if long
+    function formatDuration(seconds) {
+      const hrs = Math.floor(seconds / 3600);
+      const mins = Math.floor((seconds % 3600) / 60);
+      const secs = Math.floor(seconds % 60);
+      if (hrs > 0) {
+        return `${hrs}:${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+      }
+      return `${mins}:${secs.toString().padStart(2, '0')}`;
+    }
+
+    // Distance between two lat/lon points using Haversine formula (meters)
+    function calculateDistance(lat1, lon1, lat2, lon2) {
+      const R = 6371000;
+      const toRad = (deg) => (deg * Math.PI) / 180;
+      const dLat = toRad(lat2 - lat1);
+      const dLon = toRad(lon2 - lon1);
+      const a =
+        Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+        Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(dLon / 2) * Math.sin(dLon / 2);
+      const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+      return R * c;
+    }
+
+    // Initialize Leaflet map
+    function initMap() {
+      if (map) return;
+      map = L.map('map', {
+        center: [0, 0],
+        zoom: 13,
+        zoomControl: true,
+        attributionControl: false,
+      });
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        maxZoom: 19,
+      }).addTo(map);
+      polyline = L.polyline([], {
+        color: '#fb923c',
+        weight: 6,
+        opacity: 0.9,
+        lineJoin: 'round',
+      }).addTo(map);
+    }
+
+    // Reset map and tracking data
+    function resetTracking() {
+      if (polyline) polyline.setLatLngs([]);
+      positions = [];
+      startTime = null;
+      if (timerInterval) {
+        clearInterval(timerInterval);
+        timerInterval = null;
+      }
+      document.getElementById('distance').textContent = '0.00 km';
+      document.getElementById('duration').textContent = '00:00';
+      document.getElementById('pace').textContent = '0:00 /km';
+      document.getElementById('statusMessage').textContent = 'Press "Start Workout" to begin tracking.';
+    }
+
+    // Update stats and map with new position
+    function updateWorkout(position) {
+      const { latitude, longitude } = position.coords;
+      const timestamp = position.timestamp;
+
+      positions.push({ lat: latitude, lng: longitude, timestamp });
+      if (positions.length === 1) {
+        startTime = timestamp;
+        map.setView([latitude, longitude], 15);
+        document.getElementById('statusMessage').textContent = 'Workout started. Tracking your activity live!';
+      } else {
+        polyline.addLatLng([latitude, longitude]);
+        const latLngs = polyline.getLatLngs();
+        const bounds = L.latLngBounds(latLngs);
+        map.fitBounds(bounds, { padding: [50, 50] });
+      }
+
+      // Calculate total distance in meters
+      let totalDistanceMeters = 0;
+      for (let i = 1; i < positions.length; i++) {
+        totalDistanceMeters += calculateDistance(
+          positions[i - 1].lat,
+          positions[i - 1].lng,
+          positions[i].lat,
+          positions[i].lng
+        );
+      }
+      const distanceKm = totalDistanceMeters / 1000;
+      document.getElementById('distance').textContent = distanceKm.toFixed(2) + ' km';
+
+      // Calculate duration in seconds
+      const durationSeconds = (timestamp - startTime) / 1000;
+      document.getElementById('duration').textContent = formatDuration(durationSeconds);
+
+      // Calculate pace = minutes per km
+      let pace = 0;
+      if (distanceKm > 0) {
+        pace = durationSeconds / 60 / distanceKm;
+      }
+      if (pace > 0 && pace < 60) {
+        const paceMinutes = Math.floor(pace);
+        const paceSeconds = Math.floor((pace - paceMinutes) * 60);
+        document.getElementById('pace').textContent = `${paceMinutes}:${paceSeconds.toString().padStart(2, '0')} /km`;
+      } else {
+        document.getElementById('pace').textContent = '0:00 /km';
+      }
+    }
+
+    // Start real-time workout
+    function startWorkout() {
+      if (!navigator.geolocation) {
+        alert('Geolocation is not supported by your browser.');
+        return;
+      }
+      if (watchID !== null) {
+        alert('Workout already in progress');
+        return;
+      }
+      initMap();
+      resetTracking();
+
+      watchID = navigator.geolocation.watchPosition(
+        (pos) => updateWorkout(pos),
+        (err) => {
+          document.getElementById('statusMessage').textContent =
+            'Error getting location: ' + err.message;
+        },
+        {
+          enableHighAccuracy: true,
+          maximumAge: 1000,
+          timeout: 10000,
+        }
+      );
+
+      document.getElementById('startBtn').disabled = true;
+      document.getElementById('startBtn').classList.add('cursor-not-allowed', 'bg-orange-400');
+      document.getElementById('startBtn').classList.remove('button-orange');
+      document.getElementById('stopBtn').disabled = false;
+      document.getElementById('stopBtn').classList.remove('cursor-not-allowed', 'bg-gray-700', 'text-gray-400');
+      document.getElementById('stopBtn').classList.add('button-orange');
+
+      // Start timer for duration update fallback
+      if (!timerInterval) {
+        timerInterval = setInterval(() => {
+          if (positions.length > 0 && startTime) {
+            const now = Date.now();
+            const durationSeconds = (now - startTime) / 1000;
+            document.getElementById('duration').textContent = formatDuration(durationSeconds);
+          }
+        }, 1000);
+      }
+    }
+
+    // Stop workout and save data
+    async function stopWorkout() {
+      if (watchID !== null) {
+        navigator.geolocation.clearWatch(watchID);
+        watchID = null;
+
+        document.getElementById('statusMessage').textContent = 'Workout stopped. Great job! Saving your workout...';
+
+        document.getElementById('startBtn').disabled = false;
+        document.getElementById('startBtn').classList.remove('cursor-not-allowed', 'bg-orange-400');
+        document.getElementById('startBtn').classList.add('button-orange');
+
+        document.getElementById('stopBtn').disabled = true;
+        document.getElementById('stopBtn').classList.remove('button-orange');
+        document.getElementById('stopBtn').classList.add('cursor-not-allowed', 'bg-gray-700', 'text-gray-400');
+
+        // Save workout data
+        if (activeUsername && positions.length > 1) {
+          const users = loadUsers();
+          if (users[activeUsername]) {
+            const totalDistMeters = positions.slice(1).reduce((acc, pos, i) => {
+              const prev = positions[i];
+              return acc + calculateDistance(prev.lat, prev.lng, pos.lat, pos.lng);
+            }, 0);
+            const totalDistKm = totalDistMeters / 1000;
+            const durationMs = positions[positions.length - 1].timestamp - positions[0].timestamp;
+
+            const workoutData = {
+              startTime: positions[0].timestamp,
+              endTime: positions[positions.length - 1].timestamp,
+              durationSec: durationMs / 1000,
+              distanceKm: totalDistKm,
+              route: positions.map((p) => ({ lat: p.lat, lng: p.lng, timestamp: p.timestamp })),
+            };
+
+            users[activeUsername].workouts.push(workoutData);
+            saveUsers(users);
+            updateDashboardStats(activeUsername);
+          }
+        }
+      }
+    }
+
+    // Update dashboard stats from user data
+    function updateDashboardStats(username) {
+      const users = loadUsers();
+      if (!users[username] || !users[username].workouts) return;
+
+      const workouts = users[username].workouts;
+      let totalDistance = 0;
+      let totalDuration = 0;
+      let workoutCount = workouts.length;
+
+      workouts.forEach((w) => {
+        totalDistance += w.distanceKm || 0;
+        totalDuration += w.durationSec || 0;
+      });
+
+      document.getElementById('dashTotalDistance').textContent = totalDistance.toFixed(2);
+      document.getElementById('dashTotalDuration').textContent = formatDuration(totalDuration);
+      document.getElementById('dashWorkoutsCount').textContent = workoutCount;
+    }
+
+    // Clear live tracking on logout or reset
+    function clearLiveTracking() {
+      if (watchID !== null) {
+        navigator.geolocation.clearWatch(watchID);
+      }
+      watchID = null;
+      positions = [];
+      startTime = null;
+      if (timerInterval) {
+        clearInterval(timerInterval);
+        timerInterval = null;
+      }
+      if (polyline) polyline.setLatLngs([]);
+      if (map) map.setView([0, 0], 1);
+    }
+
+    // Attach event listeners to workout buttons after rendering main content
+    function attachWorkoutListeners(username) {
+      activeUsername = username;
+      const startBtn = document.getElementById('startBtn');
+      const stopBtn = document.getElementById('stopBtn');
+      if (!startBtn || !stopBtn) return;
+
+      startBtn.disabled = false;
+      stopBtn.disabled = true;
+      stopBtn.classList.add('cursor-not-allowed', 'bg-gray-700', 'text-gray-400');
+      stopBtn.classList.remove('button-orange');
+      startBtn.classList.add('button-orange');
+      startBtn.classList.remove('cursor-not-allowed', 'bg-orange-400');
+
+      startBtn.addEventListener('click', startWorkout);
+      stopBtn.addEventListener('click', stopWorkout);
+    }
+
+    // Attach modal forms event listeners and buttons
+    function attachModalListeners() {
+      // Registration
+      document.getElementById('registerForm').addEventListener('submit', handleRegister);
+      document.getElementById('closeRegisterModal').addEventListener('click', () => {
+        hideModal(registerModal);
+      });
+      document.getElementById('switchToLoginBtn').addEventListener('click', () => {
+        hideModal(registerModal);
+        showModal(loginModal);
+      });
+
+      // Login
+      document.getElementById('loginForm').addEventListener('submit', handleLogin);
+      document.getElementById('closeLoginModal').addEventListener('click', () => {
+        hideModal(loginModal);
+      });
+      document.getElementById('switchToRegisterBtn').addEventListener('click', () => {
+        hideModal(loginModal);
+        showModal(registerModal);
+      });
+    }
+
+    // Initialize app
+    function init() {
+      attachModalListeners();
+      attachValidationListeners();
+      const username = getSession();
+      setupAppForUser(username);
+    }
+
+    window.addEventListener('load', () => {
+      init();
+
+      // GSAP animations - Animate header nav links and main title
+      if (window.gsap) {
+        gsap.from('header nav a:first-child', {
+          duration: 1.2,
+          x: -100,
+          opacity: 0,
+          ease: 'power3.out',
+        });
+        gsap.from('header nav ul li', {
+          duration: 1,
+          opacity: 0,
+          stagger: 0.15,
+          y: -20,
+          ease: 'power2.out',
+        });
+      }
+    });
+  </script>
+</body>
+</html>
+
